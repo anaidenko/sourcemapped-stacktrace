@@ -1,3 +1,11 @@
+# sourcemapped-stacktrace (improved)
+
+Added support for hidden (unlinked) maps to be forcibly fetched and applied to stack trace. It comes in handy for production environments when you don't want to expose original code to development tools, but need to access them by direct link, for example to log exceptions on external system, like Raygun or something.
+
+Use `hiddenMaps` option that accepts a list of URIs (relative or absolute) to source map files.
+
+***
+
 This is a simple module for applying source maps to JS stack traces in the browser. 
 
 ## The problem this solves

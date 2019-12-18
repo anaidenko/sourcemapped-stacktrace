@@ -33,6 +33,10 @@ function(source_map_consumer) {
    *                                      Firefox's style.  Can be either `"chrome"`, `"firefox"`
    *                                      or `undefined` (default).  If `undefined`, this library
    *                                      will guess based on `navigator.userAgent`.
+   * @param {string[]} [opts.hiddenMaps] - Array of URIs to hidden source maps that have to be fetched forcibly.
+   *                                       They are not exposed to development tools, but still are accessible by direct link
+   *                                       and come in handy for production environments with external error logging system in place
+   *                                       (hidden from real users).
    */
   var mapStackTrace = function(stack, done, opts) {
     var lines;
@@ -141,6 +145,7 @@ function(source_map_consumer) {
     this.sem = new Semaphore();
     this.sync = opts && opts.sync;
     this.mapForUri = opts && opts.cacheGlobally ? global_mapForUri : {};
+    this.hiddenMaps = opts && opts.hiddenMaps;
   };
 
   Fetcher.prototype.ajax = function(uri, callback) {
@@ -206,13 +211,51 @@ function(source_map_consumer) {
           });
         }
       } else {
-        // no map
-        this.sem.decr();
+        var hiddenMapUri = this.hiddenMaps && getHiddenSourceMapUri(uri, this.hiddenMaps);
+        if (hiddenMapUri) {
+          this.ajax(hiddenMapUri, function(xhr) {
+            if (xhr.status === 200 || (hiddenMapUri.slice(0, 7) === "file://" && xhr.status === 0)) {
+              this.mapForUri[uri] = new source_map_consumer.SourceMapConsumer(xhr.responseText);
+            }
+            this.sem.decr();
+          });
+        } else {
+          // no map
+          this.sem.decr();
+        }
       }
     } else {
       // HTTP error fetching uri of the script
       this.sem.decr();
     }
+  };
+
+  var getHiddenSourceMapUri = function(uri, hiddenMaps) {
+    var result;
+
+    if (!hiddenMaps || !hiddenMaps.length) {
+        return result;
+    }
+
+    hiddenMaps.find(hiddenMapUri => {
+        var sourceFileUri = hiddenMapUri.replace(/.map$/i, "");
+
+        if (!absUrlRegex.test(sourceFileUri)) {
+            // relative url; according to sourcemaps spec is 'source origin'
+            var origin;
+            if (uri.indexOf('://') >= 0) {
+                origin = uri.split('/').slice(0, 3).join('/')
+                sourceFileUri = origin + sourceFileUri;
+            }
+        }
+
+        if (sourceFileUri.toLowerCase() === uri.toLowerCase()) {
+            result = hiddenMapUri;
+            return true;
+        }
+    });
+
+    return result;
   };
 
   var processSourceMaps = function(lines, rows, mapForUri, traceFormat) {
