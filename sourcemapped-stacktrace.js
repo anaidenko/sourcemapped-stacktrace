@@ -12,8 +12,8 @@
 
 // note we only include source-map-consumer, not the whole source-map library,
 // which includes gear for generating source maps that we don't need
-define(['source-map/lib/source-map-consumer'],
-function(source_map_consumer) {
+define(['source-map/lib/source-map-consumer', 'detect-browser/index'],
+function(source_map_consumer, detect_browser) {
 
   var global_mapForUri = {};
 
@@ -60,7 +60,23 @@ function(source_map_consumer) {
       } else if (isFirefox() || isSafari()) {
         traceFormat = "firefox";
       } else {
-        throw new Error("unknown browser :(");
+        var browser = detect_browser();
+        switch (browser && browser.name) {
+          case 'chrome':
+          case 'edge':
+          case 'edge-ios':
+          case 'edge-chromium':
+          case 'chromium-webview':
+          case 'ie':
+            traceFormat = "chrome";
+            break;
+          case 'firefox':
+          case 'safari':
+            traceFormat = "firefox";
+            break;
+          default:
+            throw new Error("unknown browser :(");
+        }
       }
     }
 
