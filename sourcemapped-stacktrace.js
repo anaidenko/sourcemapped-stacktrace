@@ -72,6 +72,7 @@ function(source_map_consumer, detect_browser) {
             break;
           case 'firefox':
           case 'safari':
+          case 'ios-webview':
             traceFormat = "firefox";
             break;
           default:
