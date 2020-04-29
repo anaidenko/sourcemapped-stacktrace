@@ -60,7 +60,7 @@ function(source_map_consumer, detect_browser) {
       } else if (isFirefox() || isSafari()) {
         traceFormat = "firefox";
       } else {
-        var browser = detect_browser();
+        var browser = detect_browser.detect();
         switch (browser && browser.name) {
           case 'chrome':
           case 'edge':
