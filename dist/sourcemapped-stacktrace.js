@@ -123,14 +123,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	          case 'edge-chromium':
 	          case 'chromium-webview':
 	          case 'ie':
-	            traceFormat = "chrome";
+	            traceFormat = 'chrome';
 	            break;
 	          case 'firefox':
 	          case 'safari':
-	            traceFormat = "firefox";
+	          case 'ios-webview':
+	            traceFormat = 'firefox';
 	            break;
 	          default:
-	            throw new Error("unknown browser :(");
+	            throw new Error('unknown browser :(');
 	        }
 	      }
 	    }
