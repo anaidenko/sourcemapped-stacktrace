@@ -228,7 +228,7 @@ function(source_map_consumer, detect_browser) {
           });
         }
       } else {
-        var hiddenMapUri = this.hiddenMaps && getHiddenSourceMapUri(uri, this.hiddenMaps);
+        var hiddenMapUri = getHiddenSourceMapUri(uri, this.hiddenMaps);
         if (hiddenMapUri) {
           this.ajax(hiddenMapUri, function(xhr) {
             if (xhr.status === 200 || (hiddenMapUri.slice(0, 7) === "file://" && xhr.status === 0)) {
@@ -248,31 +248,21 @@ function(source_map_consumer, detect_browser) {
   };
 
   var getHiddenSourceMapUri = function(uri, hiddenMaps) {
-    var result;
-
-    if (!hiddenMaps || !hiddenMaps.length) {
-        return result;
+    if (!hiddenMaps || !hiddenMaps.resolve) {
+        return;
     }
 
-    hiddenMaps.find(hiddenMapUri => {
-        var sourceFileUri = hiddenMapUri.replace(/.map$/i, "");
+    let hiddenMapUri = hiddenMaps.resolve(uri);
 
-        if (!absUrlRegex.test(sourceFileUri)) {
-            // relative url; according to sourcemaps spec is 'source origin'
-            var origin;
-            if (uri.indexOf('://') >= 0) {
-                origin = uri.split('/').slice(0, 3).join('/')
-                sourceFileUri = origin + sourceFileUri;
-            }
+    if (!absUrlRegex.test(hiddenMapUri)) {
+        var origin;
+        if (uri.indexOf('://') >= 0) {
+            origin = uri.split('/').slice(0, 3).join('/')
+            hiddenMapUri = origin + hiddenMapUri;
         }
+    }
 
-        if (sourceFileUri.toLowerCase() === uri.toLowerCase()) {
-            result = hiddenMapUri;
-            return true;
-        }
-    });
-
-    return result;
+    return hiddenMapUri;
   };
 
   var processSourceMaps = function(lines, rows, mapForUri, traceFormat) {
